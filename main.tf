@@ -11,7 +11,7 @@ variable "projeto" {
 variable "candidato" {
   description = "Nome do candidato"
   type        = string
-  default     = "Pedro Frasson"
+  default     = "PedroFrasson"
 }
 
 resource "tls_private_key" "ec2_key" {
@@ -68,15 +68,11 @@ resource "aws_route_table" "main_route_table" {
 resource "aws_route_table_association" "main_association" {
   subnet_id      = aws_subnet.main_subnet.id
   route_table_id = aws_route_table.main_route_table.id
-
-  tags = {
-    Name = "${var.projeto}-${var.candidato}-route_table_association"
-  }
 }
 
 resource "aws_security_group" "main_sg" {
   name        = "${var.projeto}-${var.candidato}-sg"
-  description = "Permitir SSH de qualquer lugar e todo o tráfego de saída"
+  description = "permitir SSH de qualquer lugar e todo o trafego de saida"
   vpc_id      = aws_vpc.main_vpc.id
 
   # Regras de entrada
@@ -125,7 +121,7 @@ resource "aws_instance" "debian_ec2" {
   instance_type   = "t2.micro"
   subnet_id       = aws_subnet.main_subnet.id
   key_name        = aws_key_pair.ec2_key_pair.key_name
-  security_groups = [aws_security_group.main_sg.name]
+  vpc_security_group_ids = [aws_security_group.main_sg.id]
 
   associate_public_ip_address = true
 
