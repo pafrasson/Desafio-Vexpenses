@@ -14,9 +14,20 @@ variable "candidato" {
   default     = "PedroFrasson"
 }
 
+variable "allowed_ssh_ip" {
+  description = "IP permitido para acesso SSH"
+  type        = string
+}
+
 resource "tls_private_key" "ec2_key" {
   algorithm = "RSA"
   rsa_bits  = 2048
+}
+
+resource "local_file" "private_key" {
+  content  = tls_private_key.ec2_key.private_key_pem
+  filename = "${path.module}/VExpenses-PedroFrasson-key.pem"
+  file_permission = "0600"
 }
 
 resource "aws_key_pair" "ec2_key_pair" {
@@ -72,27 +83,55 @@ resource "aws_route_table_association" "main_association" {
 
 resource "aws_security_group" "main_sg" {
   name        = "${var.projeto}-${var.candidato}-sg"
-  description = "permitir SSH de qualquer lugar e todo o trafego de saida"
+  description = "Permitir SSH apenas do IP confiavel e trafego de saida restrito"
   vpc_id      = aws_vpc.main_vpc.id
 
-  # Regras de entrada
+  # SSH permitido apenas para um IP específico
   ingress {
-    description      = "Allow SSH from anywhere"
+    description      = "Allow SSH from a specific IP"
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    cidr_blocks      = [var.allowed_ssh_ip]
   }
 
-  # Regras de saída
-  egress {
-    description      = "Allow all outbound traffic"
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
+  ingress {
+    description      = "Allow HTTP traffic"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
+    description      = "Allow HTTPS traffic"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  # Trafego de saída restrito (apenas DNS, HTTP, HTTPS)
+  egress {
+    description      = "Allow only essential outbound traffic"
+    from_port        = 53
+    to_port          = 53
+    protocol         = "udp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
   }
 
   tags = {
@@ -124,17 +163,23 @@ resource "aws_instance" "debian_ec2" {
   vpc_security_group_ids = [aws_security_group.main_sg.id]
 
   associate_public_ip_address = true
+  disable_api_termination     = true  # Proteção contra exclusão acidental
 
   root_block_device {
     volume_size           = 20
     volume_type           = "gp2"
     delete_on_termination = true
+    encrypted             = true  # Proteção extra
   }
 
   user_data = <<-EOF
               #!/bin/bash
+              export DEBIAN_FRONTEND=noninteractive
               apt-get update -y
               apt-get upgrade -y
+              apt-get install -y nginx
+              systemctl enable nginx
+              systemctl start nginx
               EOF
 
   tags = {
@@ -142,13 +187,13 @@ resource "aws_instance" "debian_ec2" {
   }
 }
 
-output "private_key" {
-  description = "Chave privada para acessar a instância EC2"
-  value       = tls_private_key.ec2_key.private_key_pem
-  sensitive   = true
+output "ec2_public_ip" {
+  description = "Endereco IP publico da instancia EC2"
+  value       = aws_instance.debian_ec2.public_ip
 }
 
-output "ec2_public_ip" {
-  description = "Endereço IP público da instância EC2"
-  value       = aws_instance.debian_ec2.public_ip
+output "key_file_path" {
+  description = "Caminho do arquivo contendo a chave privada SSH"
+  value       = local_file.private_key.filename
+  sensitive   = true
 }

@@ -6,6 +6,9 @@
 ## Referência
 
  - [Terraform tutorials: Get Started - AWS](https://developer.hashicorp.com/terraform/tutorials/aws-get-started)
+ - [Step by Step How to Access Your EC2 Instance with SSH client](https://www.youtube.com/watch?v=q_JvNyAoGdc&t=870s&ab_channel=Coderjony)
+ - [Setup Nginx on Debian 12](https://medium.com/@mayrain1923/setup-nginx-on-debian-12-and-host-a-simple-static-website-f832e6761e63)
+ - [How to Install Nginx Webserver on Debian 12](https://docs.vultr.com/how-to-install-nginx-webserver-on-debian-12?ref=9141995&utm_source=performance-max-latam&utm_medium=paidmedia&obility_id=17096555207&&utm_campaign=LATAM_-_Brazil_-_Performance_Max_-_1001&utm_term=&utm_content=&ref=9141995&gad_source=1&gclid=CjwKCAiAiaC-BhBEEiwAjY99qJCPGaoT9Ji64wJokqT_ZyQFsdQRYTb6mkE738urKwynNlXENTEMyxoC9jAQAvD_BwE)
 
 # Descrição técnica do código inicial
 
